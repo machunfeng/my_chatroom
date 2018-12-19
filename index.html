@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <script src="http://localhost:8080/socket.io/socket.io.js"></script>
+  <script src="./jquery.js"></script>
+</head>
+
+<body>
+  <form>
+    <label>注册：<input type="text" id="user"></label><br>
+    <label>登录：<input type="text" id="pass"></label><br>
+    <input type="button" value="注册" id="reg">
+    <input type="button" value="登录" id="login"><br>
+    <textarea name="send" id="text" cols="30" rows="10"></textarea>
+    <input type="button" value="发送" id="send"><br>
+    <ul id='url1'></ul>
+    <style>
+    .mine {
+      background-color: rgb(16, 203, 236);
+    }
+    </style>
+  </form>
+  <script>
+    // connect webSocket
+    let sock = io.connect('ws://localhost:8080/');
+    const user = document.getElementById('user');
+    const pass = document.getElementById('pass');
+    const reg = document.getElementById('reg');
+    const login = document.getElementById('login');
+    const send = document.getElementById('send');
+    const url1 = document.getElementById('url1');
+    const text = document.getElementById('text');
+
+    let cur_username='';
+    sock.on('reg_auth', (code, msg) => {
+      if (code) {
+        alert('注册失败，' + msg);
+      } else {
+        alert('注册成功');
+      }
+    });
+    sock.on('login_auth', (code, msg) => {
+      if (code) {
+        alert('登录失败，' + msg);
+      } else {
+        alert('登录成功');
+        cur_username = user.value;
+      }
+    });
+    sock.on('msg_ret', (code, msg) => {
+      if (code) {
+        alert('发送失败， '+msg);
+      }else {
+        let ol = document.createElement('li');
+        ol.className = 'mine';
+        ol.innerHTML = `<h4>${cur_username}</h4><p>${text.value}</p>`;
+        url1.appendChild(ol);
+        text.value = '';
+      }
+    });
+    sock.on('msg', (name, texts) => {
+      let ol = document.createElement('li');
+        ol.innerHTML = `<h4>${name}</h4><p>${texts}</p>`;
+        url1.appendChild(ol);
+    })
+    reg.onclick = () => {
+      sock.emit('reg', user.value, pass.value);
+    };
+    login.onclick = () => {
+      sock.emit('login', user.value, pass.value);
+    }
+    send.onclick = () => {
+      sock.emit('msg', text.value);
+    }
+  </script>
+</body>
+
+</html>
